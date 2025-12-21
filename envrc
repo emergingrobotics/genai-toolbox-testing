@@ -1,0 +1,10 @@
+export AWS_REGION="<your-aws-region>"
+export AWS_ACCESS_KEY_ID="<your-aws-access-key-id>"
+export AWS_SECRET_ACCESS_KEY="<your-aws-secret-access-key>"
+export BEDROCK_MODEL_ID="<your-bedrock-model-id>"
+
+export SQLCMDSERVER="<your-sql-server-hostname>"
+export SQLCMDUSER="<your-sql-username>"
+export SQLCMDPASSWORD="<your-sql-password>"
+export SQLCMDDBNAME="<your-database-name>"
+export SQLCMDENCRYPT="no"
