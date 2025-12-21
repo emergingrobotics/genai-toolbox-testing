@@ -1,0 +1,13 @@
+[project]
+name = "mcp-toolbox-agent"
+version = "0.1.0"
+description = "Python agent connecting Amazon Bedrock to MCP Toolbox"
+requires-python = ">=3.10"
+dependencies = [
+    "boto3>=1.34.0",
+    "mcp>=1.0.0",
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+agent = "agent:main"

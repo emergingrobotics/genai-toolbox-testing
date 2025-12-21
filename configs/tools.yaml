@@ -1,0 +1,67 @@
+sources:
+  baseline-mssql:
+    kind: mssql
+    host: ${SQLCMDSERVER}
+    port: 1433
+    database: ${SQLCMDDBNAME}
+    user: ${SQLCMDUSER}
+    password: ${SQLCMDPASSWORD}
+    # encrypt: false - connection will be unencrypted per SQLCMDENCRYPT=no
+
+tools:
+  list-tables:
+    kind: mssql-sql
+    source: baseline-mssql
+    description: List all user tables in the database
+    statement: |
+      SELECT TABLE_SCHEMA, TABLE_NAME
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_TYPE = 'BASE TABLE'
+      ORDER BY TABLE_SCHEMA, TABLE_NAME
+
+  describe-table:
+    kind: mssql-sql
+    source: baseline-mssql
+    description: Get column details for a specific table
+    parameters:
+      - name: table_name
+        type: string
+        description: Name of the table to describe
+    statement: |
+      SELECT
+        COLUMN_NAME,
+        DATA_TYPE,
+        CHARACTER_MAXIMUM_LENGTH,
+        IS_NULLABLE,
+        COLUMN_DEFAULT
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_NAME = @p1
+      ORDER BY ORDINAL_POSITION
+
+  run-query:
+    kind: mssql-sql
+    source: baseline-mssql
+    description: Run a read-only SQL query against the database
+    parameters:
+      - name: query
+        type: string
+        description: The SQL SELECT query to execute
+    statement: "{{.query}}"
+
+  count-rows:
+    kind: mssql-sql
+    source: baseline-mssql
+    description: Count rows in a specific table
+    parameters:
+      - name: table_name
+        type: string
+        description: Name of the table to count rows from
+    statement: |
+      SELECT COUNT(*) as row_count FROM {{.table_name}}
+
+toolsets:
+  default:
+    - list-tables
+    - describe-table
+    - run-query
+    - count-rows
