@@ -102,28 +102,45 @@ Use Claude Code for one-off database queries without entering interactive mode. 
 ### Basic Usage
 
 ```bash
-claude -p "List all tables in the database"
+claude -p "List all tables in the database" --dangerously-skip-permissions
 ```
 
 The `-p` flag runs Claude with a single prompt and exits after completion.
+
+**Important:** In non-interactive mode, Claude will ask for permission to use tools. To skip permission prompts, add `--dangerously-skip-permissions`. For production scripts, consider using `--allowedTools` to limit which tools can be used.
 
 ### Examples
 
 ```bash
 # List tables
-claude -p "What tables are in the database?"
+claude -p "What tables are in the database?" --dangerously-skip-permissions
 
 # Describe a table
-claude -p "Describe the structure of the CarReport table"
+claude -p "Describe the structure of the CarReport table" --dangerously-skip-permissions
 
 # Count rows
-claude -p "How many rows are in the TransactionReport table?"
+claude -p "How many rows are in the TransactionReport table?" --dangerously-skip-permissions
 
 # Run a query
-claude -p "Show me the first 5 rows from CarReport"
+claude -p "Show me the first 5 rows from CarReport" --dangerously-skip-permissions
 
 # Complex query
-claude -p "Find all transactions from the last 30 days grouped by category"
+claude -p "Find all transactions from the last 30 days grouped by category" --dangerously-skip-permissions
+```
+
+### Restricting Tool Access
+
+Instead of skipping all permissions, you can allow specific tools only:
+
+```bash
+# Allow only the count-rows tool
+claude -p "Count rows in CarReport" --allowedTools "mcp__toolbox-db__count-rows"
+
+# Allow multiple specific tools
+claude -p "Describe and count CarReport" --allowedTools "mcp__toolbox-db__count-rows,mcp__toolbox-db__describe-table"
+
+# Allow all tools from the toolbox MCP server
+claude -p "Query the database" --allowedTools "mcp__toolbox-db__*"
 ```
 
 ### Output Formats
