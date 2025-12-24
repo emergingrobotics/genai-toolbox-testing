@@ -1,0 +1,41 @@
+# Containerfile for Python MCP Agent
+# Connects Amazon Bedrock (Claude) to MCP Toolbox server
+#
+# Build: podman build -t mcp-agent -f Containerfile .
+# Run:   podman run -it --rm \
+#          -e AWS_ACCESS_KEY_ID \
+#          -e AWS_SECRET_ACCESS_KEY \
+#          -e AWS_REGION=us-east-1 \
+#          -e MCP_URL=http://toolbox:5000/mcp/sse \
+#          mcp-agent
+
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better layer caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY agent.py .
+
+# Set environment variables with defaults
+ENV MCP_URL=http://localhost:5000/mcp/sse
+ENV AWS_REGION=us-east-1
+ENV BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-5-20250929-v1:0
+
+# Run as non-root user for security
+RUN useradd --create-home --shell /bin/bash agent
+USER agent
+
+# Run the agent
+CMD ["python", "agent.py"]

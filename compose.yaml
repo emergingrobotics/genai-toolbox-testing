@@ -1,0 +1,60 @@
+# Podman/Docker Compose file for local development
+# Run: podman-compose up -d
+# Or:  docker compose up -d
+#
+# Prerequisites:
+# - Create configs/tools.yaml with your database configuration
+# - Set environment variables for credentials (see .env.example)
+
+services:
+  # MCP Toolbox Server - provides database tools via MCP protocol
+  toolbox:
+    image: us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:${TOOLBOX_VERSION:-0.24.0}
+    container_name: mcp-toolbox
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./configs/tools.yaml:/app/tools.yaml:ro,Z
+    environment:
+      # Database credentials (passed through from host)
+      - MSSQL_USER=${MSSQL_USER:-}
+      - MSSQL_PASSWORD=${MSSQL_PASSWORD:-}
+      # Add other database credentials as needed
+      # - POSTGRES_USER=${POSTGRES_USER:-}
+      # - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}
+    command: ["--tools-file", "/app/tools.yaml", "--address", "0.0.0.0"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # Python Agent - connects Bedrock Claude to MCP Toolbox
+  agent:
+    build:
+      context: ./python-agent
+      dockerfile: Containerfile
+    container_name: mcp-agent
+    stdin_open: true   # Keep stdin open for interactive mode
+    tty: true          # Allocate a pseudo-TTY
+    environment:
+      # MCP server connection
+      - MCP_URL=http://toolbox:5000/mcp/sse
+      # AWS credentials for Bedrock
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      # Bedrock model configuration
+      - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID:-anthropic.claude-sonnet-4-5-20250929-v1:0}
+    depends_on:
+      toolbox:
+        condition: service_healthy
+    restart: "no"
+
+# Optional: Add a network for better isolation
+networks:
+  default:
+    name: mcp-network

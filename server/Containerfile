@@ -1,0 +1,19 @@
+# Containerfile for MCP Toolbox Server
+# This is a thin wrapper around the official toolbox image that adds
+# our configuration file.
+#
+# Build: podman build -t mcp-toolbox-server -f Containerfile .
+# Run:   podman run -p 5001:5000 -e MSSQL_USER -e MSSQL_PASSWORD mcp-toolbox-server
+
+ARG VERSION=0.24.0
+FROM us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:${VERSION}
+
+# Copy the tools configuration file
+COPY ../configs/tools.yaml /app/tools.yaml
+
+# Expose the default port
+EXPOSE 5000
+
+# Run the server listening on all interfaces
+ENTRYPOINT ["./toolbox"]
+CMD ["--tools-file", "/app/tools.yaml", "--address", "0.0.0.0"]
