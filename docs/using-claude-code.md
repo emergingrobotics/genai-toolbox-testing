@@ -128,20 +128,19 @@ claude -p "Show me the first 5 rows from CarReport" --dangerously-skip-permissio
 claude -p "Find all transactions from the last 30 days grouped by category" --dangerously-skip-permissions
 ```
 
-### Restricting Tool Access
+### Permission Modes
 
-Instead of skipping all permissions, you can allow specific tools only:
+There are several ways to handle permissions in non-interactive mode:
 
 ```bash
-# Allow only the count-rows tool
-claude -p "Count rows in CarReport" --allowedTools "mcp__toolbox-db__count-rows"
+# Skip all permission prompts (use in trusted environments only)
+claude -p "Count rows in CarReport" --dangerously-skip-permissions
 
-# Allow multiple specific tools
-claude -p "Describe and count CarReport" --allowedTools "mcp__toolbox-db__count-rows,mcp__toolbox-db__describe-table"
-
-# Allow all tools from the toolbox MCP server
-claude -p "Query the database" --allowedTools "mcp__toolbox-db__*"
+# Alternative: use permission-mode flag
+claude -p "Count rows in CarReport" --permission-mode bypassPermissions
 ```
+
+**Note:** The `--allowedTools` flag is for built-in tools (like `Bash`, `Edit`), not MCP tools. For MCP tools, use `--dangerously-skip-permissions` or `--permission-mode bypassPermissions`.
 
 ### Output Formats
 
