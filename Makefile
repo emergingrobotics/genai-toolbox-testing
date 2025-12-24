@@ -10,6 +10,9 @@
 COMPOSE := podman-compose
 COMPOSE_FILE := compose.yaml
 
+# Detect environment file: prefer .env, fall back to .envrc
+ENV_FILE := $(shell if [ -f .env ]; then echo ".env"; elif [ -f .envrc ]; then echo ".envrc"; else echo ""; fi)
+
 .PHONY: up down stop start restart logs attach build build-server build-agent \
         ps clean pull help env-check
 
@@ -48,16 +51,25 @@ help:
 
 # Environment check
 env-check:
-	@echo "Checking environment variables..."
-	@test -f .env || (echo "ERROR: .env file not found. Copy .env.example to .env and configure." && exit 1)
-	@echo "✓ .env file exists"
-	@grep -q "AWS_ACCESS_KEY_ID=" .env && echo "✓ AWS_ACCESS_KEY_ID is set" || echo "⚠ AWS_ACCESS_KEY_ID not set"
-	@grep -q "AWS_SECRET_ACCESS_KEY=" .env && echo "✓ AWS_SECRET_ACCESS_KEY is set" || echo "⚠ AWS_SECRET_ACCESS_KEY not set"
+	@echo "Checking environment configuration..."
+	@if [ -z "$(ENV_FILE)" ]; then \
+		echo "ERROR: No environment file found."; \
+		echo "       Create .env (preferred) or .envrc from .env.example"; \
+		exit 1; \
+	fi
+	@echo "✓ Using environment file: $(ENV_FILE)"
+	@grep -q "AWS_ACCESS_KEY_ID=" $(ENV_FILE) && echo "✓ AWS_ACCESS_KEY_ID is set" || echo "⚠ AWS_ACCESS_KEY_ID not set"
+	@grep -q "AWS_SECRET_ACCESS_KEY=" $(ENV_FILE) && echo "✓ AWS_SECRET_ACCESS_KEY is set" || echo "⚠ AWS_SECRET_ACCESS_KEY not set"
 	@test -f configs/tools.yaml && echo "✓ configs/tools.yaml exists" || echo "⚠ configs/tools.yaml not found"
 
 # Lifecycle targets
 up: env-check
-	$(COMPOSE) -f $(COMPOSE_FILE) up -d
+	@if [ "$(ENV_FILE)" = ".envrc" ]; then \
+		echo "Sourcing .envrc and starting services..."; \
+		set -a && . ./$(ENV_FILE) && set +a && $(COMPOSE) -f $(COMPOSE_FILE) up -d; \
+	else \
+		$(COMPOSE) -f $(COMPOSE_FILE) --env-file $(ENV_FILE) up -d; \
+	fi
 	@echo ""
 	@echo "Services started. Use 'make attach' to interact with the agent."
 	@echo "Use 'make logs' to view logs."
